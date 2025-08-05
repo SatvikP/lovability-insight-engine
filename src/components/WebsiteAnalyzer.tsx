@@ -1,3 +1,4 @@
+// src/components/WebsiteAnalyzer.tsx
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Zap, TrendingUp, Users, AlertCircle, CheckCircle, ArrowRight } from "lucide-react";
 import { FirecrawlService } from '@/utils/FirecrawlService';
-import { analyzeWebsiteContent, WebsiteAnalysis } from '@/utils/websiteAnalyzer';
+import { AnthropicService, WebsiteAnalysis } from '@/utils/AnthropicService';
 
 export const WebsiteAnalyzer = () => {
   const { toast } = useToast();
@@ -21,11 +22,14 @@ export const WebsiteAnalyzer = () => {
     setAnalysis(null);
     
     try {
-      const apiKey = FirecrawlService.getApiKey();
-      if (!apiKey) {
+      // Check if both API keys are available
+      const firecrawlKey = FirecrawlService.getApiKey();
+      const anthropicKey = AnthropicService.getApiKey();
+      
+      if (!firecrawlKey || !anthropicKey) {
         toast({
           title: "Error",
-          description: "Please set your API key first",
+          description: "Please set both Firecrawl and Anthropic API keys first",
           variant: "destructive",
           duration: 3000,
         });
@@ -33,20 +37,36 @@ export const WebsiteAnalyzer = () => {
       }
 
       console.log('Starting analysis for URL:', url);
-      const result = await FirecrawlService.analyzeWebsite(url);
       
-      if (result.success) {
-        const websiteAnalysis = analyzeWebsiteContent(result.data);
-        setAnalysis(websiteAnalysis);
+      // Step 1: Scrape the website using Firecrawl
+      const scrapeResult = await FirecrawlService.analyzeWebsite(url);
+      
+      if (!scrapeResult.success) {
+        toast({
+          title: "Scraping Failed",
+          description: scrapeResult.error || "Failed to scrape website",
+          variant: "destructive",
+          duration: 3000,
+        });
+        return;
+      }
+
+      console.log('Website scraped successfully, now analyzing with AI...');
+      
+      // Step 2: Analyze the scraped content using Anthropic AI
+      const analysisResult = await AnthropicService.analyzeWebsite(scrapeResult.data);
+      
+      if (analysisResult.success) {
+        setAnalysis(analysisResult.data!);
         toast({
           title: "Analysis Complete",
-          description: "Your website has been analyzed successfully",
+          description: "Your website has been analyzed with AI-powered insights",
           duration: 3000,
         });
       } else {
         toast({
-          title: "Analysis Failed",
-          description: result.error || "Failed to analyze website",
+          title: "AI Analysis Failed",
+          description: analysisResult.error || "Failed to analyze website with AI",
           variant: "destructive",
           duration: 3000,
         });
@@ -82,10 +102,10 @@ export const WebsiteAnalyzer = () => {
       <Card className="border-2 shadow-elegant">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Website Growth Analyzer
+            AI-Powered Website Growth Analyzer
           </CardTitle>
           <p className="text-muted-foreground">
-            Get instant feedback on your onboarding, UX, and growth potential
+            Get AI-powered feedback on your onboarding, UX, and growth potential
           </p>
         </CardHeader>
         <CardContent>
@@ -112,13 +132,13 @@ export const WebsiteAnalyzer = () => {
                 ) : (
                   <>
                     <Zap className="h-4 w-4 mr-2" />
-                    Get Feedback
+                    Get AI Feedback
                   </>
                 )}
               </Button>
             </div>
             <div className="text-center text-sm text-muted-foreground">
-              ✨ <strong>Fix your onboarding in 3 clicks — or it's free</strong>
+              ✨ <strong>AI-powered Growth 101 analysis in 30 seconds</strong>
             </div>
           </form>
         </CardContent>
@@ -132,8 +152,8 @@ export const WebsiteAnalyzer = () => {
               <div className="animate-pulse text-primary">
                 <Zap className="h-8 w-8 mx-auto" />
               </div>
-              <h3 className="text-lg font-semibold">Analyzing your website...</h3>
-              <p className="text-muted-foreground">This usually takes 10-30 seconds</p>
+              <h3 className="text-lg font-semibold">AI is analyzing your website...</h3>
+              <p className="text-muted-foreground">Scraping content and applying Growth 101 principles</p>
               <Progress value={65} className="w-64 mx-auto" />
             </div>
           </CardContent>
@@ -151,7 +171,7 @@ export const WebsiteAnalyzer = () => {
                   {analysis.overall.score}/100
                 </div>
                 <Badge variant={getScoreBadgeVariant(analysis.overall.score)} className="text-sm px-4 py-1">
-                  Overall Growth Score
+                  AI Growth Score
                 </Badge>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                   {analysis.overall.summary}
@@ -162,12 +182,12 @@ export const WebsiteAnalyzer = () => {
 
           {/* Category Breakdowns */}
           <div className="grid md:grid-cols-3 gap-4">
-            {/* Onboarding */}
-            <Card className="border-l-4 border-l-primary">
+            {/* Onboarding Score */}
+            <Card className="border shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
+                    <Users className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Onboarding</CardTitle>
                   </div>
                   <Badge variant={getScoreBadgeVariant(analysis.onboarding.score)}>
@@ -193,7 +213,7 @@ export const WebsiteAnalyzer = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-success flex items-center gap-1">
                       <CheckCircle className="h-3 w-3" />
-                      Suggestions
+                      AI Suggestions
                     </h4>
                     {analysis.onboarding.suggestions.map((suggestion, index) => (
                       <p key={index} className="text-xs text-muted-foreground bg-success/5 p-2 rounded">
@@ -205,13 +225,13 @@ export const WebsiteAnalyzer = () => {
               </CardContent>
             </Card>
 
-            {/* UX & Flow */}
-            <Card className="border-l-4 border-l-info">
+            {/* UX Score */}
+            <Card className="border shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-info" />
-                    <CardTitle className="text-lg">UX & Flow</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <CardTitle className="text-lg">UX/UI</CardTitle>
                   </div>
                   <Badge variant={getScoreBadgeVariant(analysis.ux.score)}>
                     {analysis.ux.score}
@@ -236,7 +256,7 @@ export const WebsiteAnalyzer = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-success flex items-center gap-1">
                       <CheckCircle className="h-3 w-3" />
-                      Suggestions
+                      AI Suggestions
                     </h4>
                     {analysis.ux.suggestions.map((suggestion, index) => (
                       <p key={index} className="text-xs text-muted-foreground bg-success/5 p-2 rounded">
@@ -248,12 +268,12 @@ export const WebsiteAnalyzer = () => {
               </CardContent>
             </Card>
 
-            {/* Growth */}
-            <Card className="border-l-4 border-l-warning">
+            {/* Growth Score */}
+            <Card className="border shadow-sm">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-warning" />
+                    <Zap className="h-4 w-4 text-primary" />
                     <CardTitle className="text-lg">Growth</CardTitle>
                   </div>
                   <Badge variant={getScoreBadgeVariant(analysis.growth.score)}>
@@ -279,7 +299,7 @@ export const WebsiteAnalyzer = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-success flex items-center gap-1">
                       <CheckCircle className="h-3 w-3" />
-                      Suggestions
+                      AI Suggestions
                     </h4>
                     {analysis.growth.suggestions.map((suggestion, index) => (
                       <p key={index} className="text-xs text-muted-foreground bg-success/5 p-2 rounded">
@@ -296,10 +316,10 @@ export const WebsiteAnalyzer = () => {
           <Card className="border-2 border-primary bg-gradient-subtle">
             <CardContent className="py-6">
               <div className="text-center space-y-4">
-                <h3 className="text-xl font-bold">Want deeper insights?</h3>
+                <h3 className="text-xl font-bold">Want deeper AI insights?</h3>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                   Get industry-specific benchmarks, expert recommendations, and actionable growth playbooks 
-                  from top PLG operators.
+                  powered by advanced AI analysis.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
                   <span>✓ Industry benchmarks</span>
@@ -308,11 +328,11 @@ export const WebsiteAnalyzer = () => {
                   <span>✓ Growth automation tips</span>
                 </div>
                 <Button className="bg-gradient-primary hover:shadow-glow transition-all duration-300">
-                  Try Pro Agent
+                  Try Pro AI Agent
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  Based on insights from top PLG operators and real founder data
+                  Powered by Claude AI and Growth 101 expertise
                 </p>
               </div>
             </CardContent>
