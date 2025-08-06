@@ -7,7 +7,16 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+// Update the CORS configuration
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'https://lovability-insight-engine.lovable.app',  // Add your Lovable domain
+    'https://*.lovable.app'  // Allow all Lovable subdomains
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Import services
