@@ -1,4 +1,4 @@
-// src/components/WebsiteAnalyzer.tsx
+// src/components/WebsiteAnalyzer.tsx (Simplified - No API Keys Needed)
 import { useState } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Zap, TrendingUp, Users, AlertCircle, CheckCircle, ArrowRight } from "lucide-react";
-import { FirecrawlService } from '@/utils/FirecrawlService';
-import { AnthropicService, WebsiteAnalysis } from '@/utils/AnthropicService';
+import { BackendService, WebsiteAnalysis } from '@/utils/BackendService';
 
 export const WebsiteAnalyzer = () => {
   const { toast } = useToast();
@@ -22,62 +21,33 @@ export const WebsiteAnalyzer = () => {
     setAnalysis(null);
     
     try {
-      // Check if both API keys are available
-      const firecrawlKey = FirecrawlService.getApiKey();
-      const anthropicKey = AnthropicService.getApiKey();
+      console.log('Starting AI analysis for URL:', url);
       
-      if (!firecrawlKey || !anthropicKey) {
+      // Single API call to backend - handles everything
+      const result = await BackendService.analyzeWebsite(url);
+      
+      if (result.success) {
+        setAnalysis(result.data!);
         toast({
-          title: "Error",
-          description: "Please set both Firecrawl and Anthropic API keys first",
-          variant: "destructive",
-          duration: 3000,
-        });
-        return;
-      }
-
-      console.log('Starting analysis for URL:', url);
-      
-      // Step 1: Scrape the website using Firecrawl
-      const scrapeResult = await FirecrawlService.analyzeWebsite(url);
-      
-      if (!scrapeResult.success) {
-        toast({
-          title: "Scraping Failed",
-          description: scrapeResult.error || "Failed to scrape website",
-          variant: "destructive",
-          duration: 3000,
-        });
-        return;
-      }
-
-      console.log('Website scraped successfully, now analyzing with AI...');
-      
-      // Step 2: Analyze the scraped content using Anthropic AI
-      const analysisResult = await AnthropicService.analyzeWebsite(scrapeResult.data);
-      
-      if (analysisResult.success) {
-        setAnalysis(analysisResult.data!);
-        toast({
-          title: "Analysis Complete",
+          title: "Analysis Complete! 🎉",
           description: "Your website has been analyzed with AI-powered insights",
           duration: 3000,
         });
       } else {
         toast({
-          title: "AI Analysis Failed",
-          description: analysisResult.error || "Failed to analyze website with AI",
+          title: "Analysis Failed",
+          description: result.error || "Failed to analyze website",
           variant: "destructive",
-          duration: 3000,
+          duration: 5000,
         });
       }
     } catch (error) {
       console.error('Error analyzing website:', error);
       toast({
         title: "Error",
-        description: "Failed to analyze website",
+        description: "Failed to connect to analysis service",
         variant: "destructive",
-        duration: 3000,
+        duration: 5000,
       });
     } finally {
       setIsLoading(false);
@@ -105,8 +75,11 @@ export const WebsiteAnalyzer = () => {
             AI-Powered Website Growth Analyzer
           </CardTitle>
           <p className="text-muted-foreground">
-            Get AI-powered feedback on your onboarding, UX, and growth potential
+            Get instant AI feedback on your onboarding, UX, and growth potential
           </p>
+          <div className="text-xs text-muted-foreground bg-primary/10 rounded-lg p-2 mt-2">
+            🤖 Powered by Claude AI • No API keys required • Just enter your URL
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -132,13 +105,13 @@ export const WebsiteAnalyzer = () => {
                 ) : (
                   <>
                     <Zap className="h-4 w-4 mr-2" />
-                    Get AI Feedback
+                    Analyze with AI
                   </>
                 )}
               </Button>
             </div>
             <div className="text-center text-sm text-muted-foreground">
-              ✨ <strong>AI-powered Growth 101 analysis in 30 seconds</strong>
+              ✨ <strong>Professional Growth 101 analysis powered by AI - completely free</strong>
             </div>
           </form>
         </CardContent>
@@ -153,8 +126,13 @@ export const WebsiteAnalyzer = () => {
                 <Zap className="h-8 w-8 mx-auto" />
               </div>
               <h3 className="text-lg font-semibold">AI is analyzing your website...</h3>
-              <p className="text-muted-foreground">Scraping content and applying Growth 101 principles</p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>🔍 Scraping website content...</p>
+                <p>🤖 Applying Growth 101 principles with Claude AI...</p>
+                <p>📊 Generating personalized recommendations...</p>
+              </div>
               <Progress value={65} className="w-64 mx-auto" />
+              <p className="text-xs text-muted-foreground">This usually takes 30-60 seconds</p>
             </div>
           </CardContent>
         </Card>
@@ -176,6 +154,9 @@ export const WebsiteAnalyzer = () => {
                 <p className="text-muted-foreground max-w-2xl mx-auto">
                   {analysis.overall.summary}
                 </p>
+                <div className="text-xs text-muted-foreground">
+                  Analyzed by Claude AI using Growth 101 principles
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -200,7 +181,7 @@ export const WebsiteAnalyzer = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
-                      Issues Found
+                      AI Found Issues
                     </h4>
                     {analysis.onboarding.issues.map((issue, index) => (
                       <p key={index} className="text-xs text-muted-foreground bg-destructive/5 p-2 rounded">
@@ -213,7 +194,7 @@ export const WebsiteAnalyzer = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-success flex items-center gap-1">
                       <CheckCircle className="h-3 w-3" />
-                      AI Suggestions
+                      AI Recommendations
                     </h4>
                     {analysis.onboarding.suggestions.map((suggestion, index) => (
                       <p key={index} className="text-xs text-muted-foreground bg-success/5 p-2 rounded">
@@ -243,7 +224,7 @@ export const WebsiteAnalyzer = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
-                      Issues Found
+                      AI Found Issues
                     </h4>
                     {analysis.ux.issues.map((issue, index) => (
                       <p key={index} className="text-xs text-muted-foreground bg-destructive/5 p-2 rounded">
@@ -256,7 +237,7 @@ export const WebsiteAnalyzer = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-success flex items-center gap-1">
                       <CheckCircle className="h-3 w-3" />
-                      AI Suggestions
+                      AI Recommendations
                     </h4>
                     {analysis.ux.suggestions.map((suggestion, index) => (
                       <p key={index} className="text-xs text-muted-foreground bg-success/5 p-2 rounded">
@@ -286,7 +267,7 @@ export const WebsiteAnalyzer = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
-                      Issues Found
+                      AI Found Issues
                     </h4>
                     {analysis.growth.issues.map((issue, index) => (
                       <p key={index} className="text-xs text-muted-foreground bg-destructive/5 p-2 rounded">
@@ -299,7 +280,7 @@ export const WebsiteAnalyzer = () => {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-success flex items-center gap-1">
                       <CheckCircle className="h-3 w-3" />
-                      AI Suggestions
+                      AI Recommendations
                     </h4>
                     {analysis.growth.suggestions.map((suggestion, index) => (
                       <p key={index} className="text-xs text-muted-foreground bg-success/5 p-2 rounded">
@@ -316,23 +297,22 @@ export const WebsiteAnalyzer = () => {
           <Card className="border-2 border-primary bg-gradient-subtle">
             <CardContent className="py-6">
               <div className="text-center space-y-4">
-                <h3 className="text-xl font-bold">Want deeper AI insights?</h3>
+                <h3 className="text-xl font-bold">Want more detailed insights?</h3>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Get industry-specific benchmarks, expert recommendations, and actionable growth playbooks 
-                  powered by advanced AI analysis.
+                  Get comprehensive reports with competitor analysis, industry benchmarks, 
+                  and step-by-step implementation guides.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
                   <span>✓ Industry benchmarks</span>
-                  <span>✓ Expert playbooks</span>
-                  <span>✓ A/B testing suggestions</span>
-                  <span>✓ Growth automation tips</span>
+                  <span>✓ Implementation roadmap</span>
+                  <span>✓ A/B testing templates</span>
                 </div>
                 <Button className="bg-gradient-primary hover:shadow-glow transition-all duration-300">
-                  Try Pro AI Agent
+                  Get Premium Analysis
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  Powered by Claude AI and Growth 101 expertise
+                  Professional Growth 101 insights powered by Claude AI
                 </p>
               </div>
             </CardContent>
