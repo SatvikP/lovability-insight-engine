@@ -11,8 +11,8 @@ app.use(cors());
 app.use(express.json());
 
 // Import services
-const { scrapeWebsite } = require('./services/firecrawlService');
-const { analyzeWithAI } = require('./services/anthropicService');
+const { scrapeWebsite } = require('./services/firecrawlService.js');
+const { analyzeWithAI } = require('./services/anthropicService.js');
 
 // Health check endpoint
 app.get('/health', (req, res) => {
