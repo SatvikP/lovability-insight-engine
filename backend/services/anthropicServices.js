@@ -1,5 +1,4 @@
-// services/anthropicService.js
-const fetch = require('node-fetch');
+// services/anthropicServices.js (FIXED - No node-fetch needed)
 
 async function analyzeWithAI(websiteData) {
   try {
