@@ -24,7 +24,7 @@ export interface WebsiteAnalysis {
 export class BackendService {
   // Update this URL after deploying to Railway
   private static readonly API_BASE_URL = process.env.NODE_ENV === 'production' 
-    ? 'lovability-insight-engine-production.up.railway.app' // Update this after deployment
+    ? 'https://lovability-insight-engine-production.up.railway.app' // Update this after deployment
     : 'http://localhost:3001';
 
   static async analyzeWebsite(url: string): Promise<{ success: boolean; error?: string; data?: WebsiteAnalysis }> {
